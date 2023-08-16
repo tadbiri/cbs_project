@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chart</title>
+    <script src="/cbs/chart.min.js"></script>
+</head>
+
+<body>
+    <div style="width: 670px; height: 600px;">
+        <canvas id="ctx"></canvas>
+        <div>
+            <span>Dataset 1</span>
+            <button onclick="f1()">Add Dataset</button>
+            <button onclick="f2()">Remove Dataset</button>
+        </div>
+        <div>
+            <span>Dataset 2</span>
+            <button onclick="f11()">Add Dataset</button>
+            <button onclick="f22()">Remove Dataset</button>
+        </div>
+        <div>
+            <span>Live</span>
+            <button onclick="on()">start</button>
+            <button onclick="off()">stop</button>
+        </div>
+    </div>
+
+
+    <script>
+        const ctx = document.getElementById('ctx');
+
+        const skipped = (ctx, value) => ctx.p0.skip || ctx.p1.skip ? value : undefined;
+
+
+        var ctxx = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [1,2,3,4,5,6,7],
+                datasets: [{
+                    label: 'My First Dataset',
+                    data: [65, 59, NaN, 48, 56, 57, 40],
+                    borderColor: 'rgba(255, 0, 0, 0.9)',
+                    segment: {
+                      borderDash: ctx => skipped(ctx, [6, 6]),
+                    },
+                    borderWidth: 5,
+                    spanGaps: true,
+		    fill: false,
+		    radius: 0,
+			interaction: {
+          intersect: false
+      },
+                },
+                {
+                    label: 'My Second Dataset',
+                    data: [43, 14, 23, 23, 18, NaN, NaN],
+                    borderColor: 'rgba(0, 255, 0, 0.9)',
+                    segment: {
+                      borderDash: ctx => skipped(ctx, [10, 6]),
+                    },
+                    borderWidth: 3,
+                    spanGaps: true
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Chart.js Line Chart'
+                    }
+                },
+                fill: false,
+                interaction: {
+                    intersect: false
+                },
+                radius: 10,
+            },
+        });
+
+        const actions = [
+            {
+                name: 'Add Data',
+                handler(ctx, datasetIndex) {
+                    const data = ctx.data;
+                    if (data.datasets.length > 0) {
+                        data.labels.push(data.datasets[datasetIndex].data.length+1);
+                        data.datasets[datasetIndex].data.push(Math.random() * (70 - 10) + 10);
+                        ctx.update();
+                    }
+                }
+            },
+            {
+                name: 'Remove Data',
+                handler(ctx) {
+                    ctx.data.labels.splice(-1, 1); // remove the label first
+
+                    console.log(ctx.data.datasets);
+                    ctx.data.datasets.forEach(dataset => {
+                        dataset.data.pop();
+                    });
+
+                    ctx.update();
+                }
+            }
+        ];
+
+        var f1 = function(){
+            actions[0].handler(ctxx, 0);
+        };
+        var f2 = function(){
+            actions[1].handler(ctxx);
+        };
+
+        var f11 = function(){
+            actions[0].handler(ctxx, 1);
+        };
+        var f22 = function(){
+            actions[1].handler(ctxx);
+        };
+
+        var tick = null; 
+        var on = function(){
+            if(tick !== null){
+                return;
+            }
+            alert('it,s on');
+            tick = setInterval(()=>{
+                actions[0].handler(ctxx, 0);
+                actions[0].handler(ctxx, 1);                
+            }, 1000);
+        };
+
+        var off = function(){
+            clearInterval(tick);
+            tick = null;
+        }
+
+    </script>
+</body>
+
+</html>

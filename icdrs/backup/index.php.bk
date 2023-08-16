@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Chart</title>
+  <script src="/cbs/chart.min.js"></script>
+  <style>
+    .d-flex {
+      display: flex;
+    }
+    .m-l-5 {
+      margin-left: 5px;
+    }
+
+    .m-l-10 {
+      margin-left: 10px;
+    }
+  </style>
+  <?php
+  require_once "/cbshome/failedcdr_analysis/app/cbs_cdr_insert/layout/api.php";
+  ?>
+  <script src="/cbs/jquery.min.js"></script>
+    <link href="/cbs/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/cbs/theme.css">
+</head>
+
+<body>
+  <div class="d-flex row">
+    <div class="col-md-6">
+      <div class="chart-box">
+        <h3 class="chart-title">Total Voice Success</h3>
+        <div><canvas id="Total-Success-Code"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="chart-box">
+        <h3 class="chart-title">Total Voice Failed</h3>
+        <div><canvas id="Total-Failed-Error-Code"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="failed-error-box">
+    <h2 class="failed-error-title">Failed Error Code Analysis</h2>
+  </div>
+
+  <div class="d-flex row">
+    <div class="col-md-6">
+      <div class="chart-box">
+        <h3 class="chart-title">Tehran</h3>
+        <div><canvas id="Failed-Error-Code-Tehran"></canvas></div>
+      </div>
+    </div>  
+    <div class="col-md-6">
+      <div class="chart-box">
+        <h3 class="chart-title">Tabriz</h3>
+        <div><canvas id="Failed-Error-Code-Tabriz"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex row">
+    <div class="col-md-6">
+      <div class="chart-box">
+        <h3 class="chart-title">Shiraz</h3>
+        <div><canvas id="Failed-Error-Code-Shiraz"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="chart-box">
+        <h3 class="chart-title">Mashhad</h3>
+        <div><canvas id="Failed-Error-Code-Mashhad"></canvas></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script>
+
+// Config.
+  const config = {
+    borderWidth: 2,
+    fill: false,
+    radius: 0,
+    options: {
+      interaction: {
+            mode: 'index',
+            intersect: false,
+            axis: 'x'
+      }
+    }
+  };
+  // End Config.
+
+  /////////////////////////////// Total_Success_Code ///////////////////////////////////
+
+  const Total_Success_Code = document.getElementById('Total-Success-Code');
+  const Total_Success_Code_X = <?php echo json_encode($Total_Success_Code['x_axis']) ?>;
+  const Total_Success_Code_Data = new Array();
+
+  const Total_Success_Code_Skipped = (Total_Success_Code, value) => Total_Success_Code.p0.skip || Total_Success_Code.p1.skip ? value : undefined;
+
+  <?php foreach ($Total_Success_Code['graph'] as $graph) { ?>
+    Total_Success_Code_Data.push({
+      label: "<?= $graph['label'] ?>",
+      data: <?php echo json_encode($graph['dataset']) ?>,
+      borderColor: '<?= $graph['color']['border'] ?>',
+      backgroundColor: '<?= $graph['color']['background'] ?>',
+      segment: {borderDash: Total_Success_Code => Total_Success_Code_Skipped(Total_Success_Code, [6, 6])},
+      spanGaps: true,
+      fill: config.fill,
+      borderWidth: config.borderWidth,
+      radius: config.radius
+    });
+  <?php } ?>
+
+  var Total_Success_Code_Chart = new Chart(Total_Success_Code, {
+    type: 'line',
+    data: {
+      labels: Total_Success_Code_X,
+      datasets: Total_Success_Code_Data,
+    }
+  });
+
+  /////////////////////////////// Total_Failed_Error_Code ///////////////////////////////////
+
+  const Total_Failed_Error_Code = document.getElementById('Total-Failed-Error-Code');
+  const Total_Failed_Error_Code_X = <?php echo json_encode($Total_Failed_Code['x_axis']) ?>;
+  const Total_Failed_Error_Code_Data = new Array();
+
+  const Total_Failed_Error_Code_Skipped = (Total_Failed_Error_Code, value) => Total_Failed_Error_Code.p0.skip || Total_Failed_Error_Code.p1.skip ? value : undefined;
+
+  <?php foreach ($Total_Failed_Code['graph'] as $graph) { ?>
+    Total_Failed_Error_Code_Data.push({
+      label: "<?= $graph['label'] ?>",
+      data: <?php echo json_encode($graph['dataset']) ?>,
+      borderColor: '<?= $graph['color']['border'] ?>',
+      backgroundColor: '<?= $graph['color']['background'] ?>',
+      segment: {borderDash: Total_Failed_Error_Code => Total_Failed_Error_Code_Skipped(Total_Failed_Error_Code, [6, 6]),},
+      spanGaps: true,
+      fill: config.fill,
+      borderWidth: config.borderWidth,
+      radius: config.radius
+    });
+  <?php } ?>
+
+  var Total_Failed_Code_Chart = new Chart(Total_Failed_Error_Code, {
+    type: 'line',
+    data: {
+      labels: Total_Failed_Error_Code_X,
+      datasets: Total_Failed_Error_Code_Data,
+    }
+  });
+
+  /////////////////////////////// Failed_Error_Code_Tehran ///////////////////////////////////
+
+  const Failed_Error_Code_Tehran = document.getElementById('Failed-Error-Code-Tehran');
+  const Failed_Error_Code_Tehran_X = <?php echo json_encode($Failed_Error_Code_Tehran['x_axis']) ?>;
+  const Failed_Error_Code_Tehran_Data = new Array();
+
+  const Failed_Error_Code_Tehran_Skipped = (Failed_Error_Code_Tehran, value) => Failed_Error_Code_Tehran.p0.skip || Failed_Error_Code_Tehran.p1.skip ? value : undefined;
+
+  <?php foreach ($Failed_Error_Code_Tehran['graph'] as $graph) { ?>
+    Failed_Error_Code_Tehran_Data.push({
+      label: "<?= $graph['label'] ?>",
+      data: <?php echo json_encode($graph['dataset']) ?>,
+      borderColor: '<?= $graph['color']['border'] ?>',
+      backgroundColor: '<?= $graph['color']['background'] ?>',
+      segment: {borderDash: Failed_Error_Code_Tehran => Failed_Error_Code_Tehran_Skipped(Failed_Error_Code_Tehran, [6, 6]),},
+      spanGaps: true,
+      fill: config.fill,
+      borderWidth: config.borderWidth,
+      radius: config.radius
+    });
+  <?php } ?>
+
+
+  var Failed_Error_Tehran_Chart = new Chart(Failed_Error_Code_Tehran, {
+    type: 'line',
+    data: {
+      labels: Failed_Error_Code_Tehran_X,
+      datasets: Failed_Error_Code_Tehran_Data,
+    }
+  });
+
+  /////////////////////////////// Failed_Error_Code_Tabriz ///////////////////////////////////
+
+  const Failed_Error_Code_Tabriz = document.getElementById('Failed-Error-Code-Tabriz');
+  const Failed_Error_Code_Tabriz_X = <?php echo json_encode($Failed_Error_Code_Tabriz['x_axis']) ?>;
+  const Failed_Error_Code_Tabriz_Data = new Array();
+  
+  const Failed_Error_Code_Tabriz_Skipped = (Failed_Error_Code_Tabriz, value) => Failed_Error_Code_Tabriz.p0.skip || Failed_Error_Code_Tabriz.p1.skip ? value : undefined;
+
+  <?php foreach ($Failed_Error_Code_Tabriz['graph'] as $graph) { ?>
+    Failed_Error_Code_Tabriz_Data.push({
+      label: "<?= $graph['label'] ?>",
+      data: <?php echo json_encode($graph['dataset']) ?>,
+      borderColor: '<?= $graph['color']['border'] ?>',
+      backgroundColor: '<?= $graph['color']['background'] ?>',
+      segment: {borderDash: Failed_Error_Code_Tabriz => Failed_Error_Code_Tabriz_Skipped(Failed_Error_Code_Tabriz, [6, 6]),},
+      spanGaps: true,
+      fill: config.fill,
+      borderWidth: config.borderWidth,
+      radius: config.radius
+    });
+  <?php } ?>
+
+  var Failed_Error_Tabriz_Chart = new Chart(Failed_Error_Code_Tabriz, {
+    type: 'line',
+    data: {
+      labels: Failed_Error_Code_Tabriz_X,
+      datasets: Failed_Error_Code_Tabriz_Data,
+    }
+  });
+
+  /////////////////////////////// Failed_Error_Code_Shiraz ///////////////////////////////////
+
+  const Failed_Error_Code_Shiraz = document.getElementById('Failed-Error-Code-Shiraz');
+  const Failed_Error_Code_Shiraz_X = <?php echo json_encode($Failed_Error_Code_Shiraz['x_axis']) ?>;
+  const Failed_Error_Code_Shiraz_Data = new Array();
+  
+  const Failed_Error_Code_Shiraz_Skipped = (Failed_Error_Code_Shiraz, value) => Failed_Error_Code_Shiraz.p0.skip || Failed_Error_Code_Shiraz.p1.skip ? value : undefined;
+
+  <?php foreach ($Failed_Error_Code_Shiraz['graph'] as $graph) { ?>
+    Failed_Error_Code_Shiraz_Data.push({
+      label: "<?= $graph['label'] ?>",
+      data: <?php echo json_encode($graph['dataset']) ?>,
+      borderColor: '<?= $graph['color']['border'] ?>',
+      backgroundColor: '<?= $graph['color']['background'] ?>',
+      segment: {borderDash: Failed_Error_Code_Shiraz => Failed_Error_Code_Shiraz_Skipped(Failed_Error_Code_Shiraz, [6, 6]),},
+      spanGaps: true,
+      fill: config.fill,
+      borderWidth: config.borderWidth,
+      radius: config.radius
+    });
+  <?php } ?>
+
+  var Failed_Error_Shiraz_Chart = new Chart(Failed_Error_Code_Shiraz, {
+    type: 'line',
+    data: {
+      labels: Failed_Error_Code_Shiraz_X,
+      datasets: Failed_Error_Code_Shiraz_Data,
+    }
+  });
+
+  /////////////////////////////// Failed_Error_Code_Mashhad ///////////////////////////////////
+
+  const Failed_Error_Code_Mashhad = document.getElementById('Failed-Error-Code-Mashhad');
+  const Failed_Error_Code_Mashhad_X = <?php echo json_encode($Failed_Error_Code_Mashhad['x_axis']) ?>;
+  const Failed_Error_Code_Mashhad_Data = new Array();
+  
+  const Failed_Error_Code_Mashhad_Skipped = (Failed_Error_Code_Mashhad, value) => Failed_Error_Code_Mashhad.p0.skip || Failed_Error_Code_Mashhad.p1.skip ? value : undefined;
+
+  <?php foreach ($Failed_Error_Code_Mashhad['graph'] as $graph) { ?>
+    Failed_Error_Code_Mashhad_Data.push({
+      label: "<?= $graph['label'] ?>",
+      data: <?php echo json_encode($graph['dataset']) ?>,
+      borderColor: '<?= $graph['color']['border'] ?>',
+      backgroundColor: '<?= $graph['color']['background'] ?>',
+      segment: {borderDash: Failed_Error_Code_Mashhad => Failed_Error_Code_Mashhad_Skipped(Failed_Error_Code_Mashhad, [6, 6]),},
+      spanGaps: true,
+      fill: config.fill,
+      borderWidth: config.borderWidth,
+      radius: config.radius
+    });
+  <?php } ?>
+
+  var Failed_Error_Mashhad_Chart = new Chart(Failed_Error_Code_Mashhad, {
+    type: 'line',
+    data: {
+      labels: Failed_Error_Code_Mashhad_X,
+      datasets: Failed_Error_Code_Mashhad_Data,
+    }
+  });
+
+  ///////////////////////////////////////////////////////////////////////////////
+
+  const actions = {
+    handler(ctx, response) {
+      const data = ctx.data;
+      if (data.datasets.length > 0) {
+        data.labels = response.x_axis;
+        // To loop chart-line count.
+        for(let i=0;i<data.datasets.length; i++){
+          data.datasets[i].data = response.graph[i].dataset;
+        }
+        ctx.update();
+      }
+    }
+  };
+
+
+  $(document).ready(function() {
+    setInterval(function() {
+      $.ajax({
+        url: "/cbs/api.php?ajax=true",
+        cache: false,
+        method: "GET",
+        async: false,
+        success: function(response) {
+          actions.handler(Total_Success_Code_Chart, response.TotalSuccessCode);
+          actions.handler(Total_Failed_Code_Chart, response.TotalFailedCode);
+          actions.handler(Failed_Error_Tehran_Chart, response.FailedErrorTehran);
+          actions.handler(Failed_Error_Tabriz_Chart, response.FailedErrorTabriz);
+          actions.handler(Failed_Error_Shiraz_Chart, response.FailedErrorShiraz);
+          actions.handler(Failed_Error_Mashhad_Chart, response.FailedErrorMashhad);
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown) {
+          // Detect network failure.
+          console.error("Error network failure :)");
+        }
+      });
+    }, 60000);
+  });
+</script>
+
+</html>

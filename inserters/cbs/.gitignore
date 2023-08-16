@@ -1,0 +1,13 @@
+*.log
+*.plog
+*.unl
+nohup.out
+
+*/*.log
+*/*.plog
+*/*.unl
+*/nohup.out
+*.ndx
+*.prm
+*/*.prm
+*/*.ndx

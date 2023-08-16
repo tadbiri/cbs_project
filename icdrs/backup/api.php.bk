@@ -1,0 +1,441 @@
+<?php
+
+require_once "/cbshome/failedcdr_analysis/app/cbs_cdr_insert/database.php";
+require_once "/cbshome/failedcdr_analysis/app/cbs_cdr_insert/type_convertor.php";
+
+/**
+ * param
+ */
+function successChart($startTime, $endTime, $regionId, $errorCodeId)
+{
+    $query = "SELECT SUBSTRING_INDEX(cl.cdr_date_time,':',2) as 'dateTime', sum(cl.e_count) as 'errorCount' 
+                FROM cbs_see_voice_err_code_log cl
+                where cl.region_id = '" . $regionId . "'
+                and cl.serrc_code = '" . $errorCodeId . "'
+                and SUBSTRING_INDEX(cl.cdr_date_time,'.',1) BETWEEN '" . $startTime . "' AND '" . $endTime . "'
+                group by SUBSTRING_INDEX(cl.cdr_date_time,':',2)";
+    return query($query);
+}
+function failedChart($startTime, $endTime, $regionId, $errorCodeId)
+{
+    $query = "SELECT SUBSTRING_INDEX(cl.cdr_date_time,':',2) as 'dateTime', sum(cl.e_count) as 'errorCount' 
+                FROM cbs_see_voice_err_code_log cl
+                where cl.region_id = '" . $regionId . "'
+                and cl.serrc_code <> '" . $errorCodeId . "'
+                and SUBSTRING_INDEX(cl.cdr_date_time,'.',1) BETWEEN '" . $startTime . "' AND '" . $endTime . "'
+                group by SUBSTRING_INDEX(cl.cdr_date_time,':',2)";
+    return query($query);
+}
+/**
+ * param
+ */
+function errorCodeList($startTime, $endTime, $regionId)
+{
+    $query = "SELECT cl.serrc_code as 'errorCode' 
+                FROM cbs_see_voice_err_code_log cl
+                where cl.region_id = '" . $regionId . "'
+                and cl.serrc_code <> '100'
+                and SUBSTRING_INDEX(cl.cdr_date_time,'.',1) BETWEEN '" . $startTime . "' AND '" . $endTime . "'
+                group by cl.serrc_code";
+    $object = query($query);
+    $errorCodeList = TypeConvertorHelper::getKeyListFromArrayList($object, 'errorCode');
+    return TypeConvertorHelper::arrayToCSV($errorCodeList, true);
+}
+
+function errorCodeData($startTime, $endTime, $regionId, $errorCodeCSV)
+{
+    $query = "SELECT SUBSTRING_INDEX(cl.cdr_date_time,':',2) as 'dateTime',  sum(cl.e_count) as 'errorCount', cl.serrc_code as 'errorCode'
+                FROM cbs_see_voice_err_code_log cl
+                where cl.region_id = '" . $regionId . "'
+                and cl.serrc_code IN (" . $errorCodeCSV . ")
+                and SUBSTRING_INDEX(cl.cdr_date_time,'.',1) BETWEEN '" . $startTime . "' AND '" . $endTime . "'
+                group by SUBSTRING_INDEX(cl.cdr_date_time,':',2),cl.serrc_code
+                ORDER BY cl.serrc_code";
+    return query($query);
+}
+
+/////////////////////////////// Setting /////////////////////////////////////
+// Get now time stamp.
+$endTimeStamp = strtotime(date('Y-m-d H:i:00'));
+// Cal 25 hours ago.
+$startTimeStamp = $endTimeStamp - 90000;
+// Convert to dateTime format.
+$endDateTime = date('Y-m-d H:i', $endTimeStamp);
+$endDateTime = $endDateTime . ":00";
+$startDateTime = date('Y-m-d H:i', $startTimeStamp);
+$startDateTime = $startDateTime . ":00";
+
+/////////////////////////// Success Chart Info //////////////////////////////
+$tehranGraph = successChart($startDateTime, $endDateTime, '1', '100');
+$tabrizGraph = successChart($startDateTime, $endDateTime, '2', '100');
+$shirazGraph = successChart($startDateTime, $endDateTime, '3', '100');
+$mashhadGraph = successChart($startDateTime, $endDateTime, '4', '100');
+$tehranDataset = [];
+$mashhadDataset = [];
+$shirazDataset = [];
+$tabrizDataset = [];
+
+/////////////////////////// Failed Chart Info //////////////////////////////
+$tehranFailedGraph = failedChart($startDateTime, $endDateTime, '1', '100');
+$tabrizFailedGraph = failedChart($startDateTime, $endDateTime, '2', '100');
+$shirazFailedGraph = failedChart($startDateTime, $endDateTime, '3', '100');
+$mashhadFailedGraph = failedChart($startDateTime, $endDateTime, '4', '100');
+$tehranFailedDataset = [];
+$mashhadFailedDataset = [];
+$shirazFailedDataset = [];
+$tabrizFailedDataset = [];
+
+/////////////////////////// Error Code Per City Info //////////////////////////////
+$tehranErrorCodeCSV = errorCodeList($startDateTime, $endDateTime, '1');
+$tabrizErrorCodeCSV = errorCodeList($startDateTime, $endDateTime, '2');
+$shirazErrorCodeCSV = errorCodeList($startDateTime, $endDateTime, '3');
+$mashhadErrorCodeCSV = errorCodeList($startDateTime, $endDateTime, '4');
+
+$tehranErrorCodeData = errorCodeData($startDateTime, $endDateTime, "1", $tehranErrorCodeCSV);
+$tehranErrorCodeDataList = TypeConvertorHelper::getKeyListFromArrayList($tehranErrorCodeData, 'errorCode');
+$tehranCoordinates = TypeConvertorHelper::arrayToCoordinates($tehranErrorCodeDataList);
+
+$tabrizErrorCodeData = errorCodeData($startDateTime, $endDateTime, "1", $tabrizErrorCodeCSV);
+$tabrizErrorCodeDataList = TypeConvertorHelper::getKeyListFromArrayList($tabrizErrorCodeData, 'errorCode');
+$tabrizCoordinates = TypeConvertorHelper::arrayToCoordinates($tabrizErrorCodeDataList);
+
+$shirazErrorCodeData = errorCodeData($startDateTime, $endDateTime, "1", $shirazErrorCodeCSV);
+$shirazErrorCodeDataList = TypeConvertorHelper::getKeyListFromArrayList($shirazErrorCodeData, 'errorCode');
+$shirazCoordinates = TypeConvertorHelper::arrayToCoordinates($shirazErrorCodeDataList);
+
+$mashhadErrorCodeData = errorCodeData($startDateTime, $endDateTime, "1", $mashhadErrorCodeCSV);
+$mashhadErrorCodeDataList = TypeConvertorHelper::getKeyListFromArrayList($mashhadErrorCodeData, 'errorCode');
+$mashhadCoordinates = TypeConvertorHelper::arrayToCoordinates($mashhadErrorCodeDataList);
+
+/////////////////////////// Total Success Dataset //////////////////////////////
+$x_axis_success = [];
+for ($i = $startTimeStamp; $i <= $endTimeStamp; $i += 60) {
+    $_startDateTime =  date('Y-m-d H:i', $i);
+    $x_axis_success[] = $_startDateTime;
+    // total success Dataset.
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($tehranGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $tehranDataset[] = 'NaN';
+    } else {
+        $tehranDataset[] = $tehranGraph[$_index]['errorCount'];
+    }
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($tabrizGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $tabrizDataset[] = 'NaN';
+    } else {
+        $tabrizDataset[] = $tabrizGraph[$_index]['errorCount'];
+    }
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($shirazGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $shirazDataset[] = 'NaN';
+    } else {
+        $shirazDataset[] = $shirazGraph[$_index]['errorCount'];
+    }
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($mashhadGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $mashhadDataset[] = 'NaN';
+    } else {
+        $mashhadDataset[] = $mashhadGraph[$_index]['errorCount'];
+    }
+}
+
+/////////////////////////// Total Failed Dataset//////////////////////////////
+$x_axis_tehran_error = $x_axis_success;
+$x_axis_failed = [];
+for ($i = $startTimeStamp; $i <= $endTimeStamp; $i += 60) {
+    $_startDateTime =  date('Y-m-d H:i', $i);
+    $x_axis_failed[] = $_startDateTime;
+
+    //total failed dataset
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($tehranFailedGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $tehranFailedDataset[] = 'NaN';
+    } else {
+        $tehranFailedDataset[] = $tehranFailedGraph[$_index]['errorCount'];
+    }
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($tabrizFailedGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $tabrizFailedDataset[] = 'NaN';
+    } else {
+        $tabrizFailedDataset[] = $tabrizFailedGraph[$_index]['errorCount'];
+    }
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($shirazFailedGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $shirazFailedDataset[] = 'NaN';
+    } else {
+        $shirazFailedDataset[] = $shirazFailedGraph[$_index]['errorCount'];
+    }
+    $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($mashhadFailedGraph, ['dateTime', $_startDateTime]);
+    if ($_index == -1) {
+        $mashhadFailedDataset[] = 'NaN';
+    } else {
+        $mashhadFailedDataset[] = $mashhadFailedGraph[$_index]['errorCount'];
+    }
+}
+
+/////////////////////////// Error Code Tehran Dataset //////////////////////////////
+$x_axis_tehran_error = $x_axis_success;
+$tehranErrorDataSet = [];
+foreach ($tehranCoordinates as $tehranCoordinate) {
+    $errorCode = $tehranCoordinate[0];
+    $_temp['errorCode'] = $errorCode;
+    $tehranErrorData = array_slice($tehranErrorCodeData, $tehranCoordinate[1], $tehranCoordinate[2]);
+    $_temp['dataset'] = [];
+    for ($i = $startTimeStamp; $i <= $endTimeStamp; $i += 60) {
+        $_startDateTime =  date('Y-m-d H:i', $i);
+        $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($tehranErrorData, ['dateTime', $_startDateTime]);
+        if ($_index == -1) {
+            $_temp['dataset'][] = '0';
+        } else {
+            $_temp['dataset'][] = $tehranErrorData[$_index]['errorCount'];
+        }
+    }
+    $tehranErrorDataSet[] = $_temp;
+}
+
+/////////////////////////// Error Code Tabriz Dataset //////////////////////////////
+$x_axis_tabriz_error = $x_axis_success;
+$tabrizErrorDataSet = [];
+foreach ($tabrizCoordinates as $tabrizCoordinate) {
+    $errorCode = $tabrizCoordinate[0];
+    $_temp['errorCode'] = $errorCode;
+    $tabrizErrorData = array_slice($tabrizErrorCodeData, $tabrizCoordinate[1], $tabrizCoordinate[2]);
+    $_temp['dataset'] = [];
+    for ($i = $startTimeStamp; $i <= $endTimeStamp; $i += 60) {
+        $_startDateTime =  date('Y-m-d H:i', $i);
+        $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($tabrizErrorData, ['dateTime', $_startDateTime]);
+        if ($_index == -1) {
+            $_temp['dataset'][] = '0';
+        } else {
+            $_temp['dataset'][] = $tabrizErrorData[$_index]['errorCount'];
+        }
+    }
+    $tabrizErrorDataSet[] = $_temp;
+}
+
+/////////////////////////// Error Code Shiraz Dataset //////////////////////////////
+$x_axis_shiraz_error = $x_axis_success;
+$shirazErrorDataSet = [];
+foreach ($shirazCoordinates as $shirazCoordinate) {
+    $errorCode = $shirazCoordinate[0];
+    $_temp['errorCode'] = $errorCode;
+    $shirazErrorData = array_slice($shirazErrorCodeData, $shirazCoordinate[1], $shirazCoordinate[2]);
+    $_temp['dataset'] = [];
+    for ($i = $startTimeStamp; $i <= $endTimeStamp; $i += 60) {
+        $_startDateTime =  date('Y-m-d H:i', $i);
+        $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($shirazErrorData, ['dateTime', $_startDateTime]);
+        if ($_index == -1) {
+            $_temp['dataset'][] = '0';
+        } else {
+            $_temp['dataset'][] = $shirazErrorData[$_index]['errorCount'];
+        }
+    }
+    $shirazErrorDataSet[] = $_temp;
+}
+
+/////////////////////////// Error Code Mashhad Dataset //////////////////////////////
+$x_axis_mashhad_error = $x_axis_success;
+$mashhadErrorDataSet = [];
+foreach ($mashhadCoordinates as $mashhadCoordinate) {
+    $errorCode = $mashhadCoordinate[0];
+    $_temp['errorCode'] = $errorCode;
+    $mashhadErrorData = array_slice($mashhadErrorCodeData, $mashhadCoordinate[1], $mashhadCoordinate[2]);
+    $_temp['dataset'] = [];
+    for ($i = $startTimeStamp; $i <= $endTimeStamp; $i += 60) {
+        $_startDateTime =  date('Y-m-d H:i', $i);
+        $_index = TypeConvertorHelper::getIndexOfKeyValueInArray($mashhadErrorData, ['dateTime', $_startDateTime]);
+        if ($_index == -1) {
+            $_temp['dataset'][] = '0';
+        } else {
+            $_temp['dataset'][] = $mashhadErrorData[$_index]['errorCount'];
+        }
+    }
+    $mashhadErrorDataSet[] = $_temp;
+}
+
+
+/////////////////////////// Total Success DATA //////////////////////////////
+$Total_Success_Code = [
+    'x_axis' => $x_axis_success,
+    'graph' => [
+        [
+            'label' => 'Tehran',
+            'color' => [
+                'background' => 'rgba(226, 24, 24, 0.5)',
+                'border' => 'rgba(226, 24, 24, 1)'
+            ],
+            'dataset' => $tehranDataset
+        ], [
+            'label' => 'Tabriz',
+            'color' => [
+                'background' => 'rgba(70, 180, 45, 0.5)',
+                'border' => 'rgba(70, 180, 45, 1)'
+            ],
+            'dataset' => $tabrizDataset
+        ], [
+            'label' => 'Shiraz',
+            'color' => [
+                'background' => 'rgba(58, 56, 199, 0.5)',
+                'border' => 'rgba(58, 56, 199, 1)'
+            ],
+            'dataset' => $shirazDataset
+        ], [
+            'label' => 'Mashhad',
+            'color' => [
+                'background' => 'rgba(230, 151, 40, 0.5)',
+                'border' => 'rgba(230, 151, 40, 1)'
+            ],
+            'dataset' => $mashhadDataset
+        ]
+    ]
+];
+/////////////////////////// Total Failed DATA //////////////////////////////
+$Total_Failed_Code = [
+    'x_axis' => $x_axis_failed,
+    'graph' => [
+        [
+            'label' => 'Tehran',
+            'color' => [
+                'background' => 'rgba(226, 24, 24, 0.5)',
+                'border' => 'rgba(226, 24, 24, 1)'
+            ],
+            'dataset' => $tehranFailedDataset
+        ], [
+            'label' => 'Tabriz',
+            'color' => [
+                'background' => 'rgba(70, 180, 45, 0.5)',
+                'border' => 'rgba(70, 180, 45, 1)'
+            ],
+            'dataset' => $tabrizFailedDataset
+        ], [
+            'label' => 'Shiraz',
+            'color' => [
+                'background' => 'rgba(58, 56, 199, 0.5)',
+                'border' => 'rgba(58, 56, 199, 1)'
+            ],
+            'dataset' => $shirazFailedDataset
+        ], [
+            'label' => 'Mashhad',
+            'color' => [
+                'background' => 'rgba(230, 151, 40, 0.5)',
+                'border' => 'rgba(230, 151, 40, 1)'
+            ],
+            'dataset' => $mashhadFailedDataset
+        ]
+    ]
+];
+
+/////////////////////////// Total Tehran Error DATA //////////////////////////////
+$Failed_Error_Code_Tehran = [
+    'x_axis' => $x_axis_tehran_error,
+    'graph' => []
+];
+
+foreach ($tehranErrorDataSet as $_dataset) {
+    $a = rand(0,255);
+    $b = rand(0,255);
+    $c = rand(0,255);
+    $_background = "rgba($a, $b, $c, 0.5)";
+    $_border  = "rgba($a, $b, $c, 1)";
+    $Failed_Error_Code_Tehran['graph'][] = [
+        'label' => $_dataset['errorCode'],
+        'color' => [
+            'background' => $_background,
+            'border' => $_border
+        ],
+        'dataset' => $_dataset['dataset']
+    ];
+}
+
+/////////////////////////// Total Tabriz Error DATA //////////////////////////////
+$Failed_Error_Code_Tabriz = [
+    'x_axis' => $x_axis_tabriz_error,
+    'graph' => []
+];
+
+foreach ($tabrizErrorDataSet as $_dataset) {
+    $a = rand(0,255);
+    $b = rand(0,255);
+    $c = rand(0,255);
+    $_background = "rgba($a, $b, $c, 0.5)";
+    $_border  = "rgba($a, $b, $c, 1)";
+    $Failed_Error_Code_Tabriz['graph'][] = [
+        'label' => $_dataset['errorCode'],
+        'color' => [
+            'background' => $_background,
+            'border' => $_border
+        ],
+        'dataset' => $_dataset['dataset']
+    ];
+}
+
+/////////////////////////// Total Shiraz Error DATA //////////////////////////////
+$Failed_Error_Code_Shiraz = [
+    'x_axis' => $x_axis_shiraz_error,
+    'graph' => []
+];
+
+foreach ($shirazErrorDataSet as $_dataset) {
+    $a = rand(0,255);
+    $b = rand(0,255);
+    $c = rand(0,255);
+    $_background = "rgba($a, $b, $c, 0.5)";
+    $_border  = "rgba($a, $b, $c, 1)";
+    $Failed_Error_Code_Shiraz['graph'][] = [
+        'label' => $_dataset['errorCode'],
+        'color' => [
+            'background' => $_background,
+            'border' => $_border
+        ],
+        'dataset' => $_dataset['dataset']
+    ];
+}
+
+/////////////////////////// Total Mashhad Error DATA //////////////////////////////
+$Failed_Error_Code_Mashhad = [
+    'x_axis' => $x_axis_mashhad_error,
+    'graph' => []
+];
+
+foreach ($mashhadErrorDataSet as $_dataset) {
+    $a = rand(0,255);
+    $b = rand(0,255);
+    $c = rand(0,255);
+    $_background = "rgba($a, $b, $c, 0.5)";
+    $_border  = "rgba($a, $b, $c, 1)";
+    $Failed_Error_Code_Mashhad['graph'][] = [
+        'label' => $_dataset['errorCode'],
+        'color' => [
+            'background' => $_background,
+            'border' => $_border
+        ],
+        'dataset' => $_dataset['dataset']
+    ];
+}
+
+/////////////////////////// Prepare live Data //////////////////////////////
+if(isset($_GET['ajax'])){
+    header("content-type: application/json; charset=utf-8");
+/*   
+   // THIS SECTION MAKE FACKE DATA FOR LIVE CHART STREAM,
+   // REMOVE IT FOR PRODUCTION
+   // OR UNCOMMENT IT FOR TEST AND TO SEE HOW IT WORK.
+    $c=0;
+    foreach($Total_Success_Code['graph'] as $g){
+        $j=0;
+        foreach($Total_Success_Code['graph'][$c]['dataset'] as $d){
+            $Total_Success_Code['graph'][$c]['dataset'][$j] = rand(100, 950);
+            $j++;
+        }
+        $c++;
+    }
+*/    
+    echo json_encode([
+        'TotalSuccessCode' => $Total_Success_Code,
+        'TotalFailedCode' => $Total_Failed_Code,
+        'FailedErrorTehran' => $Failed_Error_Code_Tehran,
+        'FailedErrorTabriz' => $Failed_Error_Code_Tabriz,
+        'FailedErrorShiraz' => $Failed_Error_Code_Shiraz,
+        'FailedErrorMashhad' => $Failed_Error_Code_Mashhad,
+    ]); 
+}

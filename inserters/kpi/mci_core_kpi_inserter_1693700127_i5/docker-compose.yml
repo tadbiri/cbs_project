@@ -1,0 +1,21 @@
+version: "3.2"
+services:
+  inserter:
+    image: tadbiri/inserter:v0
+    container_name: ${INS_NAME}
+    restart: on-failure
+    network_mode: "host"
+    volumes:
+      - type: bind
+        source: ${INS_DATA_DIR}
+        target: ${INS_DATA_DIR}
+      - type: bind
+        source: ${INS_APP_DIR}/${INS_FILE}
+        target: ${INS_APP_DIR}
+    environment:
+      INS_DATA_DIR: ${INS_DATA_DIR}
+    command: /bin/bash -c "php ${INS_APP_DIR}/${INS_FILE}.php"
+    
+
+
+

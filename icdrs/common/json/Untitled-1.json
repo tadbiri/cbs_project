@@ -1,0 +1,1 @@
+[{"label":"Entities","name":"entities","options":[{"label":"ALL","value":"__ALL__"},{"label":"call_min","value":"call_min"},{"label":"call_min_free","value":"call_min_free"},{"label":"call_debit_amount","value":"call_debit_amount"},{"label":"call_free_amount","value":"call_free_amount"}],"placeholder":"please select","type":"select","width":40}]
